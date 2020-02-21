@@ -258,6 +258,8 @@ local function attachButtonToTooltip(self)
 	end
 end
 
+
+-- Fuck Frames
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:SetScript("OnEvent", function(self, e, a)
