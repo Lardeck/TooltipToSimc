@@ -1,0 +1,9 @@
+## Interface: 80300
+## Title: tooltipSimc
+## Notes: 
+## Author: Permok
+## Version: 1
+## DefaultState: enabled
+## SavedVariables: tooltipSimcDB
+
+tooltipSimc.lua
