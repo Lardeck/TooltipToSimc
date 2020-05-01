@@ -1,6 +1,6 @@
-local name = ...
+local name, tpSimc = ...
 
-local itemInfo, db
+local itemInfo, itemName, db
 local equipLocToSlot = {
 	INVTYPE_HEAD='head',
 	INVTYPE_NECK='neck',
@@ -34,6 +34,24 @@ local oneHandWeapons = {
 	[15] = LE_ITEM_WEAPON_DAGGER,
 }
 
+local nyalothaCorruptions = {
+	--[[
+	[itemId] = bonusId
+	]]
+	[172187] = 6539, -- Devastation's Hour
+	[172189] = 6548, -- Eyestalk of Il'gynoth
+	[172191] = 6567, -- An'zig Vra
+	[172193] = 6568, -- Whispering Eldritch Bow
+	[172196] = 6541, -- Vorzz Yoq'al
+	[172197] = 6569, -- Unguent Caress
+	[172198] = 6570, -- Mar'kowa, the Mindpiercer
+	[172199] = 6571, -- Faralos, Empire's Dream
+	[172200] = 6572, -- Sk'shuul Vaz
+	[172227] = 6544, -- Shard of the Black Empire
+	[174106] = 6550, -- Qwor N'lyeth
+	[174108] = 6553, -- Shgla'yos, Astral Malignity
+}
+
 local function getItemSplit(itemString)
 	local itemSplit = {}
 
@@ -48,7 +66,7 @@ local function getItemSplit(itemString)
   	return itemSplit
 end
 
-local function getItemInfo(itemSplit, slot, itemLink)
+local function getItemInfo(itemSplit, slot, itemLink, itemLevel)
 	local itemInfo = {}
 	local gems = {}
 	local gemBonuses = {}
@@ -115,6 +133,10 @@ local function getItemInfo(itemSplit, slot, itemLink)
 		bonuses[#bonuses + 1] = itemSplit[13 + index]
 	end
 
+	if nyalothaCorruptions[itemId] and itemSplit[14] == 3524 then
+		bonuses[#bonuses + 1] = nyalothaCorruptions[itemId]
+	end
+
 	if #bonuses > 0 then
 		itemInfo[#itemInfo + 1] = 'bonus_id=' .. table.concat(bonuses, '/')
 	end
@@ -163,6 +185,10 @@ local function getItemInfo(itemSplit, slot, itemLink)
 		end
 	end
 
+	if itemLevel then
+		itemInfo[#itemInfo + 1] = 'ilevel=' .. itemLevel
+	end
+
 	local str = '# '
 	str = str .. slot .. "=" .. table.concat(itemInfo, ',')
 
@@ -170,8 +196,9 @@ local function getItemInfo(itemSplit, slot, itemLink)
 end
 
 local function setupDialogBox()
-	if itemInfo and not _G[name .. "ItemInfo"] then
+	if itemInfo and not tpSimc.itemInfo then
 		local itemInfoCF = CreateFrame("ScrollFrame", name .. "ItemInfo", nil, "InputScrollFrameTemplate")
+		tpSimc.itemInfo = itemInfoCF
 		itemInfoCF:SetMovable(true)
 		itemInfoCF:EnableMouse(true)
 		itemInfoCF:RegisterForDrag("LeftButton")
@@ -179,21 +206,23 @@ local function setupDialogBox()
 		itemInfoCF:SetScript("OnDragStop", itemInfoCF.StopMovingOrSizing)
 		itemInfoCF:SetToplevel(true)
 		itemInfoCF:SetWidth(450)
-		itemInfoCF:SetHeight(65)
+		itemInfoCF:SetHeight(60)
 		table.insert(UISpecialFrames, name .. "ItemInfo")
 		itemInfoCF:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 		itemInfoCF.CharCount:Hide()
-		itemInfoCF.EditBox:SetFont("Fonts/FRIZQT__.TTF", 11)
-		itemInfoCF.EditBox:SetText(itemInfo)
+		itemInfoCF.EditBox:SetFont("Fonts/FRIZQT__.TTF", 9)
+		itemInfoCF.EditBox:SetPoint("TOPLEFT", 5, -5)
 
-		if db.off_hand and _G[name.."check_button"]:IsShown() then
-			itemInfoCF.EditBox:Insert("\n"..getItemInfo(_G[name.."check_button"].itemSplit, "off_hand", _G[name.."check_button"].itemLink))
+		if db.offHand and tpSimc.addOffHand:IsShown() then
+			local offHandInfo = getItemInfo(unpack(tpSimc.addOffHand.itemInfo))
+			itemInfoCF.EditBox:SetText(itemInfo .. "\n" .. offHandInfo)
+		else
+			itemInfoCF.EditBox:SetText(itemInfo)
 		end
 
 		itemInfoCF.EditBox:HighlightText()
 		itemInfoCF.EditBox:SetFocus()
 		itemInfoCF.EditBox:SetWidth(440)
-		itemInfoCF:Show()
 
 		local button = CreateFrame("Button", nil, itemInfoCF, "StaticPopupButtonTemplate")
 		button:SetPoint("BOTTOM", itemInfoCF, "BOTTOM",-5)
@@ -202,12 +231,16 @@ local function setupDialogBox()
 		button:SetText("Okay")
 		button.Text:SetFont("Fonts/FRIZQT__.TTF", 8)
 		button:SetScript("OnClick", function() itemInfoCF:Hide() end)
-	elseif _G[name .. "ItemInfo"] then
-		local itemInfoCF = _G[name .. "ItemInfo"]
-		itemInfoCF.EditBox:SetText(itemInfo)
 
-		if db.off_hand and _G[name.."check_button"]:IsShown() then
-			itemInfoCF.EditBox:Insert("\n"..getItemInfo(_G[name.."check_button"].itemSplit, "off_hand", _G[name.."check_button"].itemLink))
+		itemInfoCF:Show()
+	elseif tpSimc.itemInfo then
+		local itemInfoCF = tpSimc.itemInfo
+
+		if db.offHand and tpSimc.addOffHand:IsShown() then
+			local offHandInfo = getItemInfo(unpack(tpSimc.addOffHand.itemInfo))
+			itemInfoCF.EditBox:SetText(itemInfo .. "\n" .. offHandInfo)
+		else
+			itemInfoCF.EditBox:SetText(itemInfo)
 		end
 
 		itemInfoCF.EditBox:HighlightText()
@@ -222,42 +255,86 @@ local function createButton(type, suffix, parent, template)
 end
 
 local function attachButtonToTooltip(self)
-	local itemLink = select(2, self:GetItem())
+	local locItemName, itemLink = self:GetItem()
 	if not itemLink then return end
-	local equipLoc, _, _, _, subId  = select(9, GetItemInfo(itemLink))
+	local itemLevel, _, _, _, _, equipLoc, _, _, _, subId  = select(4, GetItemInfo(itemLink))
 
 	if equipLoc and equipLoc ~= '' then
 		local itemString = string.match(itemLink, "item:([%-?%d:]+)")
 		local slot = equipLocToSlot[equipLoc]
 		local itemSplit = getItemSplit(itemString)
-		itemInfo = getItemInfo(itemSplit, slot, itemLink)
+		itemInfo = getItemInfo(itemSplit, slot, itemLink, itemLevel)
+		itemName = locItemName
 
-		_G[name.."button"]:SetParent(self)
-		_G[name.."button"]:SetPoint("BOTTOM", self, "TOP")
-		_G[name.."button"]:Show()
+		tpSimc.button:SetParent(self)
+		tpSimc.button:SetPoint("BOTTOM", self, "TOP")
+		tpSimc.button:Show()
+
+		tpSimc.onlyItem:SetParent(self)
+		tpSimc.onlyItem:SetPoint("LEFT", tpSimc.button, "RIGHT", 2)
+		tpSimc.onlyItem:Show()
 
 		if equipLoc == "INVTYPE_WEAPON" and oneHandWeapons[subId] then
-			_G[name.."check_button"]:SetParent(self)
-			_G[name.."check_button"]:SetPoint("LEFT", _G[name.."button"], "RIGHT", 2)
-			_G[name.."check_button"].itemSplit = itemSplit
-			_G[name.."check_button"].itemLink = itemLink
-			_G[name.."check_button"]:Show()
-			db.off_hand = _G[name.."check_button"]:GetChecked()
-		elseif _G[name.."check_button"]:IsShown() then
-			_G[name.."check_button"]:Hide()
+			tpSimc.addOffHand:SetParent(self)
+			tpSimc.addOffHand:SetPoint("BOTTOM", tpSimc.onlyItem, "TOP")
+			tpSimc.addOffHand.itemInfo = {itemSplit, "off_hand", itemLink, itemLevel}
+			tpSimc.addOffHand:Show()
+			db.offHand = tpSimc.addOffHand:GetChecked()
+		elseif tpSimc.addOffHand:IsShown() then
+			tpSimc.addOffHand:Hide()
 		end
 
 	else
-		if _G[name.."button"] then
-			_G[name.."button"]:Hide()
+		if tpSimc.button then
+			tpSimc.button:Hide()
 		end
 
-		if _G[name.."check_button"] then
-			_G[name.."check_button"]:Hide()
+		if tpSimc.addOffHand then
+			tpSimc.addOffHand:Hide()
+		end
+
+		if tpSimc.onlyItem then
+			tpSimc.onlyItem:Hide()
 		end
 	end
 end
 
+local function createSimc()
+
+	if db.onlyItem then
+		if SimcCopyFrame and SimcCopyFrame:IsShown() then
+			SimcCopyFrame:Hide()
+		end
+
+		setupDialogBox()
+	else
+		if tpSimc.itemInfo and tpSimc.itemInfo:IsShown() then
+			tpSimc.itemInfo:Hide()
+		end
+
+		SlashCmdList["ACECONSOLE_SIMC"]("")
+
+		local item = "#\n"
+		item = item .. "# " .. itemName .. "\n"
+		item = item .. itemInfo
+
+		if db.offHand and tpSimc.addOffHand:IsShown() then
+			local offHandInfo = getItemInfo(unpack(tpSimc.addOffHand.itemInfo))
+			item = item .. "\n#\n"
+			item = item .. "# " .. itemName .. "\n"
+			item = item .. "# " .. offHandInfo
+		end
+
+		if SimcCopyFrameScrollText then
+			local text = SimcCopyFrameScrollText:GetText()
+			SimcCopyFrameScrollText:SetCursorPosition(SimcCopyFrameScrollText:GetNumLetters())
+			SimcCopyFrameScrollText:HighlightText(0,0)
+			SimcCopyFrameScrollText:Insert(item)
+			SimcCopyFrameScrollText:HighlightText()
+			SimcCopyFrameScrollText:SetFocus()
+		end
+	end
+end
 
 -- Fuck Frames
 local frame = CreateFrame("Frame")
@@ -266,24 +343,36 @@ frame:SetScript("OnEvent", function(self, e, a)
 	if e == "ADDON_LOADED" and a == name then
 		tooltipSimcDB = tooltipSimcDB or {}
 		db = tooltipSimcDB 
-		if db.off_hand == nil then
-			db.off_hand = true
-		end
+		db.offHand = db.offHand or true
+		db.onlyItem = db.onlyItem or true
 
 		local button = createButton("Button", "button", nil, "StaticPopupButtonTemplate")
 		button:SetWidth(150)
 		button:SetHeight(25)
 		button:SetText("Generate SimC String")
 		button:Hide()
-		button:SetScript("OnClick", function() setupDialogBox() end)
+		button:SetScript("OnClick", function() createSimc() end)
+		button:SetScript("OnHide", function() itemInfo = nil offHand = nil itemName = nil end)
+		tpSimc.button = button
 
-		local check_button = createButton("CheckButton", "check_button", nil, "ChatConfigCheckButtonTemplate")
-		getglobal(check_button:GetName() .. 'Text'):SetText("Add Off Hand")
-		check_button:SetChecked(db.off_hand)
-		check_button:SetScript("OnClick", function(self) 
-			db.off_hand = self:GetChecked() 
+		local addOffHand = createButton("CheckButton", "addOffHandButton", nil, "ChatConfigCheckButtonTemplate")
+		getglobal(addOffHand:GetName() .. 'Text'):SetText("Add Off Hand")
+		addOffHand:SetChecked(db.offHand)
+		addOffHand:Hide()
+		addOffHand:SetScript("OnClick", function(self) 
+			db.offHand = self:GetChecked() 
 		end)
-		check_button:Hide()
+		tpSimc.addOffHand = addOffHand
+
+
+		local onlyItem = createButton("CheckButton", "onlyItemButton", nil, "ChatConfigCheckButtonTemplate")
+		getglobal(onlyItem:GetName() .. 'Text'):SetText("Only Item")
+		onlyItem:SetChecked(db.onlyItem)
+		onlyItem:Hide()
+		onlyItem:SetScript("OnClick", function(self)
+			db.onlyItem = self:GetChecked()
+		end)
+		tpSimc.onlyItem = onlyItem
 	end
 end)
 
