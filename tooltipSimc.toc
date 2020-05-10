@@ -7,3 +7,4 @@
 ## SavedVariables: tooltipSimcDB
 
 tooltipSimc.lua
+config.lua
