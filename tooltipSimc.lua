@@ -197,23 +197,32 @@ end
 
 local function setupDialogBox(itemInfo)
 	local text
-	if itemInfo and not tpSimc.itemInfo then
-		local itemInfoCF = CreateFrame("ScrollFrame", name .. "ItemInfo", nil, "InputScrollFrameTemplate")
-		tpSimc.itemInfo = itemInfoCF
-		itemInfoCF:SetMovable(true)
-		itemInfoCF:EnableMouse(true)
-		itemInfoCF:RegisterForDrag("LeftButton")
-		itemInfoCF:SetScript("OnDragStart", itemInfoCF.StartMoving)
-		itemInfoCF:SetScript("OnDragStop", itemInfoCF.StopMovingOrSizing)
-		itemInfoCF:SetToplevel(true)
-		itemInfoCF:SetWidth(450)
-		itemInfoCF:SetHeight(60)
-		itemInfoCF:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	if itemInfo then
+		local itemInfoCF =  tpSimc.itemInfo or CreateFrame("ScrollFrame", name .. "ItemInfo", nil, "InputScrollFrameTemplate")
+		if not tpSimc.itemInfo then
+			tpSimc.itemInfo = itemInfoCF
+			itemInfoCF:SetMovable(true)
+			itemInfoCF:EnableMouse(true)
+			itemInfoCF:RegisterForDrag("LeftButton")
+			itemInfoCF:SetScript("OnDragStart", itemInfoCF.StartMoving)
+			itemInfoCF:SetScript("OnDragStop", itemInfoCF.StopMovingOrSizing)
+			itemInfoCF:SetToplevel(true)
+			itemInfoCF:SetWidth(450)
+			itemInfoCF:SetHeight(60)
+			itemInfoCF:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 
-		itemInfoCF.CharCount:Hide()
-		itemInfoCF.EditBox:SetFont("Fonts/FRIZQT__.TTF", 9)
-		itemInfoCF.EditBox:SetPoint("TOPLEFT", 5, -5)
+			itemInfoCF.CharCount:Hide()
+			itemInfoCF.EditBox:SetFont("Fonts/FRIZQT__.TTF", 9)
+			itemInfoCF.EditBox:SetPoint("TOPLEFT", 1, -2)
 
+			local button = CreateFrame("Button", nil, itemInfoCF, "StaticPopupButtonTemplate")
+			button:SetPoint("BOTTOM", itemInfoCF, "BOTTOM",-5)
+			button:SetWidth(60)
+			button:SetHeight(15)
+			button:SetText("Okay")
+			button.Text:SetFont("Fonts/FRIZQT__.TTF", 8)
+			button:SetScript("OnClick", function() itemInfoCF:Hide() end)
+		end
 
 		if db.offHand and tpSimc.addOffHand:IsShown() then
 			local offHandInfo = tpSimc.addOffHand.itemInfo
@@ -225,32 +234,9 @@ local function setupDialogBox(itemInfo)
 		itemInfoCF.EditBox:SetText(text)
 		itemInfoCF.EditBox:HighlightText()
 		itemInfoCF.EditBox:SetFocus()
-		itemInfoCF.EditBox:SetWidth(440)
+		itemInfoCF.EditBox:SetSize(itemInfoCF:GetWidth(), itemInfoCF:GetHeight()-10)
 		itemInfoCF.EditBox:SetScript("OnEscapePressed", function(self) itemInfoCF:Hide() end)
 
-
-		local button = CreateFrame("Button", nil, itemInfoCF, "StaticPopupButtonTemplate")
-		button:SetPoint("BOTTOM", itemInfoCF, "BOTTOM",-5)
-		button:SetWidth(60)
-		button:SetHeight(15)
-		button:SetText("Okay")
-		button.Text:SetFont("Fonts/FRIZQT__.TTF", 8)
-		button:SetScript("OnClick", function() itemInfoCF:Hide() end)
-
-		itemInfoCF:Show()
-	elseif tpSimc.itemInfo then
-		local itemInfoCF = tpSimc.itemInfo
-
-		if db.offHand and tpSimc.addOffHand:IsShown() then
-			local offHandInfo = tpSimc.addOffHand.itemInfo
-			text = itemInfo .. "\n" .. offHandInfo
-		else
-			text = itemInfo
-		end
-
-		itemInfoCF.EditBox:SetText(text)
-		itemInfoCF.EditBox:HighlightText()
-		itemInfoCF.EditBox:SetFocus()
 		itemInfoCF:Show()
 	end
 
@@ -277,51 +263,10 @@ local function getTooltipItem(tooltip, button)
 		local itemString = string.match(itemLink, "item:([%-?%d:]+)")
 		local slot = equipLocToSlot[equipLoc]
 		local itemSplit = getItemSplit(itemString)
-		if ViragDevTool_AddData then ViragDevTool_AddData(itemSplit) end
+		--if ViragDevTool_AddData then ViragDevTool_AddData(itemSplit) end
 		local itemInfo = getItemInfo(itemSplit, slot, itemLink, itemLevel)
 
 		return equipLoc, itemLink, itemLevel, subId, itemInfo, locItemName, itemSplit
-	end
-end
-
-local function buttonAboveTooltip(self)
-	local equipLoc, itemLink, itemLevel, subId, itemInfo, itemName, itemSplit = getTooltipItem(self)
-
-	if equipLoc and equipLoc ~= "" then
-		tpSimc.button:SetScript("OnClick", function() createSimc(itemInfo, itemName) end)
-		tpSimc.button:SetParent(self)
-		tpSimc.button:SetPoint("BOTTOM", self, "TOP")
-		tpSimc.button:Show()
-
-		tpSimc.onlyItem:SetParent(self)
-		tpSimc.onlyItem:SetPoint("LEFT", tpSimc.button, "RIGHT", 2)
-		tpSimc.onlyItem:Show()
-
-		if equipLoc == "INVTYPE_WEAPON" and oneHandWeapons[subId] then
-			tpSimc.addOffHand:SetParent(self)
-			if tpSimc.onlyItem then
-				tpSimc.addOffHand:SetPoint("BOTTOM", tpSimc.onlyItem, "TOP")
-			else
-				tpSimc.addOffHand:SetPoint("LEFT", tpSimc.button, "RIGHT", 2)
-			end
-			tpSimc.addOffHand.itemInfo = getItemInfo(itemSplit, "off_hand", itemLink, itemLevel)
-			tpSimc.addOffHand:Show()
-			db.offHand = tpSimc.addOffHand:GetChecked()
-		elseif tpSimc.addOffHand:IsShown() then
-			tpSimc.addOffHand:Hide()
-		end
-	else
-		if tpSimc.button then
-			tpSimc.button:Hide()
-		end
-
-		if tpSimc.addOffHand then
-			tpSimc.addOffHand:Hide()
-		end
-
-		if tpSimc.onlyItem then
-			tpSimc.onlyItem:Hide()
-		end
 	end
 end
 
@@ -348,7 +293,7 @@ local function createSimc(itemInfo, itemName)
 			local offHandInfo = tpSimc.addOffHand.itemInfo
 			item = item .. "\n#\n"
 			item = item .. "# " .. itemName .. "\n"
-			item = item .. "# " .. offHandInfo
+			item = item .. offHandInfo
 		end
 
 		if SimcCopyFrameScrollText then
@@ -370,6 +315,37 @@ local function createSimc(itemInfo, itemName)
 				hooked = false
 			end)
 		end
+	end
+end
+
+local function buttonAboveTooltip(self, link)
+	local tooltipType = string.match(link,"^(%a+):")
+	if tooltipType and tooltipType == "item" then
+		local equipLoc, itemLink, itemLevel, subId, itemInfo, itemName, itemSplit = getTooltipItem(self)
+
+		if equipLoc and equipLoc ~= "" then
+
+			tpSimc.button:SetScript("OnClick", function() createSimc(itemInfo, itemName) end)
+			tpSimc.button:SetParent(self)
+			tpSimc.button:SetPoint("BOTTOM", self, "TOP")
+			tpSimc.button:Show()
+
+			tpSimc.onlyItem:SetParent(tpSimc.button)
+			tpSimc.onlyItem:SetPoint("LEFT", tpSimc.button, "RIGHT", 2)
+			tpSimc.onlyItem:Show()
+
+			if equipLoc == "INVTYPE_WEAPON" and oneHandWeapons[subId] then
+				tpSimc.addOffHand:SetParent(tpSimc.button)
+				tpSimc.addOffHand:SetPoint("BOTTOM", tpSimc.onlyItem, "TOP")
+				tpSimc.addOffHand.itemInfo = getItemInfo(itemSplit, "off_hand", itemLink, itemLevel)
+				tpSimc.addOffHand:Show()
+				db.offHand = tpSimc.addOffHand:GetChecked()
+			elseif tpSimc.addOffHand:IsShown() then
+				tpSimc.addOffHand:Hide()
+			end
+		end
+	else
+		tpSimc.button:Hide()
 	end
 end
 
@@ -401,21 +377,20 @@ frame:SetScript("OnEvent", function(self, e, a)
 		tpSimc.button = button
 
 		local addOffHand = createButton("CheckButton", "addOffHandButton", nil, "ChatConfigCheckButtonTemplate")
+		tpSimc.addOffHand = addOffHand
 		addOffHand.Text:SetText("+ Off Hand")
 		addOffHand:SetChecked(db.offHand)
 		addOffHand:Hide()
-		--addOffHand:SetScale(0.7)
 		addOffHand:SetScript("OnClick", function(self) 
 			db.offHand = self:GetChecked() 
 		end)
-		tpSimc.addOffHand = addOffHand
+
 
 		if IsAddOnLoaded("Simulationcraft") then
 			local onlyItem = createButton("CheckButton", "onlyItemButton", nil, "ChatConfigCheckButtonTemplate")
 			onlyItem.Text:SetText("SimC Integration")
 			onlyItem:SetChecked(db.onlyItem)
 			onlyItem:Hide()
-			--onlyItem:SetScale(0.7)
 			onlyItem:SetScript("OnClick", function(self)
 				db.onlyItem = self:GetChecked()
 			end)
@@ -427,4 +402,4 @@ frame:SetScript("OnEvent", function(self, e, a)
 end)
 
 BINDING_HEADER_TOOLTIPSIMC1 = "tooltipSimc"
-ItemRefTooltip:HookScript("OnTooltipSetItem", buttonAboveTooltip)
+hooksecurefunc(ItemRefTooltip, "SetHyperlink", buttonAboveTooltip)
