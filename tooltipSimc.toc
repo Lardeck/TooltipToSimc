@@ -2,7 +2,7 @@
 ## Title: tooltipSimc
 ## Notes: 
 ## Author: Permok
-## Version: 1
+## Version: @project-version@
 ## DefaultState: enabled
 ## SavedVariables: tooltipSimcDB
 
