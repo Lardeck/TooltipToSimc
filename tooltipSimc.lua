@@ -352,7 +352,9 @@ end
 function tpSimcCurrentTooltip()
 	if GameTooltip then
 		local itemInfo, itemName = select(5, getTooltipItem(GameTooltip, false))
-		createSimc(itemInfo, itemName)
+		if itemInfo then
+			createSimc(itemInfo, itemName)
+		end
 	end
 end
 
