@@ -1,10 +1,11 @@
 ## Interface: 80300
-## Title: tooltipSimc
+## Title: TooltipToSimc
 ## Notes: 
 ## Author: Permok
 ## Version: @project-version@
 ## DefaultState: enabled
-## SavedVariables: tooltipSimcDB
+## SavedVariables: tooltipToSimcDB
+## OptionalDeps: Simulationcraft
 
-tooltipSimc.lua
+TooltipToSimc.lua
 config.lua

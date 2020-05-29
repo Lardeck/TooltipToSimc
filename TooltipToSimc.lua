@@ -67,6 +67,9 @@ local function getItemSplit(itemString)
 end
 
 local function getItemInfo(itemSplit, slot, itemLink, itemLevel)
+	-- code mostly copied from the Simulationcraft AddOn
+	-- https://www.curseforge.com/wow/addons/simulationcraft
+	
 	local itemInfo = {}
 	local gems = {}
 	local gemBonuses = {}
@@ -319,6 +322,7 @@ local function createSimc(itemInfo, itemName)
 end
 
 local function buttonAboveTooltip(self, link)
+	print(link)
 	local tooltipType = string.match(link,"^(%a+):")
 	if tooltipType and tooltipType == "item" then
 		local equipLoc, itemLink, itemLevel, subId, itemInfo, itemName, itemSplit = getTooltipItem(self)
@@ -368,15 +372,15 @@ frame:SetScript("OnEvent", function(self, e, a)
 			onlyItem = true
 		}
 
-		tooltipSimcDB = tooltipSimcDB or default
-		db = tooltipSimcDB 
+		tooltipToSimcDB = tooltipToSimcDB or default
+		db = tooltipToSimcDB 
 
 		local button = createButton("Button", "button", nil, "StaticPopupButtonTemplate")
+		tpSimc.button = button
 		button:SetWidth(150)
 		button:SetHeight(25)
 		button:SetText("Generate SimC String")
 		button:Hide()
-		tpSimc.button = button
 
 		local addOffHand = createButton("CheckButton", "addOffHandButton", nil, "ChatConfigCheckButtonTemplate")
 		tpSimc.addOffHand = addOffHand
@@ -390,13 +394,13 @@ frame:SetScript("OnEvent", function(self, e, a)
 
 		if IsAddOnLoaded("Simulationcraft") then
 			local onlyItem = createButton("CheckButton", "onlyItemButton", nil, "ChatConfigCheckButtonTemplate")
+			tpSimc.onlyItem = onlyItem
 			onlyItem.Text:SetText("SimC Integration")
 			onlyItem:SetChecked(db.onlyItem)
 			onlyItem:Hide()
 			onlyItem:SetScript("OnClick", function(self)
 				db.onlyItem = self:GetChecked()
 			end)
-			tpSimc.onlyItem = onlyItem
 		else
 			db.onlyItem = true
 		end
@@ -405,3 +409,4 @@ end)
 
 BINDING_HEADER_TOOLTIPSIMC1 = "tooltipSimc"
 hooksecurefunc(ItemRefTooltip, "SetHyperlink", buttonAboveTooltip)
+hooksecurefunc(ItemRefTooltip, "ClearLines", function() if tpSimc.button and tpSimc.button:IsShown() then tpSimc.button:Hide() end end)

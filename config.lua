@@ -13,7 +13,7 @@ frame:SetScript("OnShow", function(frame)
     offHandConfig:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -15)
     offHandConfig:SetChecked(tooltipSimcDB.offHand)
     offHandConfig:SetScript("OnClick", function(self) 
-        tooltipSimcDB.offHand = self:GetChecked() 
+        tooltipToSimcDB.offHand = self:GetChecked() 
     end)
 
     
@@ -23,10 +23,10 @@ frame:SetScript("OnShow", function(frame)
         onlyItemConfig:SetPoint("TOPLEFT", offHandConfig, "BOTTOMLEFT", 0, -5)
         onlyItemConfig:SetChecked(tooltipSimcDB.onlyItem)
         onlyItemConfig:SetScript("OnClick", function(self)
-            tooltipSimcDB.onlyItem = self:GetChecked()
+            tooltipToSimcDB.onlyItem = self:GetChecked()
         end)
     else
-        tooltipSimcDB.onlyItem = true
+        tooltipToSimcDB.onlyItem = true
     end
 end)
 
