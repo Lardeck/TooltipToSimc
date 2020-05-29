@@ -29,3 +29,4 @@ jobs:
       run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash -s -- -m .pkgmeta
       env:
         GITHUB_OAUTH: ${{ secrets.GH_OAUTH }}
+        CF_API_KEY: ${{ secrets.CF_API_KEY }}
