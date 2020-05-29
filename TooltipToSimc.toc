@@ -6,6 +6,7 @@
 ## DefaultState: enabled
 ## SavedVariables: tooltipToSimcDB
 ## OptionalDeps: Simulationcraft
+## X-Curse-Project-ID: 386581
 
 TooltipToSimc.lua
 config.lua
