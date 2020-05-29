@@ -1,4 +1,4 @@
-package-as: tooltipSimc
+package-as: TooltipToSimc
 
 enable-nolib-creation: yes
 
