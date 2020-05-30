@@ -266,7 +266,6 @@ local function getTooltipItem(tooltip, button)
 		local itemString = string.match(itemLink, "item:([%-?%d:]+)")
 		local slot = equipLocToSlot[equipLoc]
 		local itemSplit = getItemSplit(itemString)
-		--if ViragDevTool_AddData then ViragDevTool_AddData(itemSplit) end
 		local itemInfo = getItemInfo(itemSplit, slot, itemLink, itemLevel)
 
 		return equipLoc, itemLink, itemLevel, subId, itemInfo, locItemName, itemSplit
@@ -322,7 +321,6 @@ local function createSimc(itemInfo, itemName)
 end
 
 local function buttonAboveTooltip(self, link)
-	print(link)
 	local tooltipType = string.match(link,"^(%a+):")
 	if tooltipType and tooltipType == "item" then
 		local equipLoc, itemLink, itemLevel, subId, itemInfo, itemName, itemSplit = getTooltipItem(self)
@@ -347,6 +345,8 @@ local function buttonAboveTooltip(self, link)
 			elseif tpSimc.addOffHand:IsShown() then
 				tpSimc.addOffHand:Hide()
 			end
+		elseif tpSimc.button:IsShown() then
+			tpSimc.button:Hide()
 		end
 	else
 		tpSimc.button:Hide()
@@ -395,7 +395,7 @@ frame:SetScript("OnEvent", function(self, e, a)
 		if IsAddOnLoaded("Simulationcraft") then
 			local onlyItem = createButton("CheckButton", "onlyItemButton", nil, "ChatConfigCheckButtonTemplate")
 			tpSimc.onlyItem = onlyItem
-			onlyItem.Text:SetText("SimC Integration")
+			onlyItem.Text:SetText("Simc Integration")
 			onlyItem:SetChecked(db.onlyItem)
 			onlyItem:Hide()
 			onlyItem:SetScript("OnClick", function(self)
@@ -409,4 +409,6 @@ end)
 
 BINDING_HEADER_TOOLTIPSIMC1 = "tooltipSimc"
 hooksecurefunc(ItemRefTooltip, "SetHyperlink", buttonAboveTooltip)
+
+-- WeakAuras :(
 hooksecurefunc(ItemRefTooltip, "ClearLines", function() if tpSimc.button and tpSimc.button:IsShown() then tpSimc.button:Hide() end end)
