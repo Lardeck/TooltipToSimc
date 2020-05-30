@@ -19,7 +19,7 @@ frame:SetScript("OnShow", function(frame)
     
     if IsAddOnLoaded("Simulationcraft") then
         local onlyItemConfig = CreateFrame("CheckButton", name.."onlyItemButtonConfig", frame, "ChatConfigCheckButtonTemplate")
-        onlyItemConfig.Text:SetText("SimC Integration")
+        onlyItemConfig.Text:SetText("Simc Integration")
         onlyItemConfig:SetPoint("TOPLEFT", offHandConfig, "BOTTOMLEFT", 0, -5)
         onlyItemConfig:SetChecked(tooltipSimcDB.onlyItem)
         onlyItemConfig:SetScript("OnClick", function(self)
