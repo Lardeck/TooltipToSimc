@@ -407,7 +407,7 @@ frame:SetScript("OnEvent", function(self, e, a)
 	end
 end)
 
-BINDING_HEADER_TOOLTIPSIMC1 = "tooltipSimc"
+BINDING_HEADER_TOOLTIPSIMC1 = "TooltipToSimc"
 hooksecurefunc(ItemRefTooltip, "SetHyperlink", buttonAboveTooltip)
 
 -- WeakAuras :(
