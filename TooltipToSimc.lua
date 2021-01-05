@@ -275,8 +275,8 @@ end
 local function createSimc(itemInfo, itemName)
 	
 	if not db.onlyItem then
-		if SimcCopyFrame and SimcCopyFrame:IsShown() then
-			SimcCopyFrame:Hide()
+		if SimcFrame and SimcFrame:IsShown() then
+			SimcFrame:Hide()
 		end
 
 		setupDialogBox(itemInfo)
@@ -298,22 +298,22 @@ local function createSimc(itemInfo, itemName)
 			item = item .. offHandInfo
 		end
 
-		if SimcCopyFrameScrollText then
+		if SimcEditBox then
 			hooked = true
-			local text = SimcCopyFrameScrollText:GetText()
-			SimcCopyFrameScrollText:SetCursorPosition(SimcCopyFrameScrollText:GetNumLetters())
-			SimcCopyFrameScrollText:HighlightText(0,0)
-			SimcCopyFrameScrollText:Insert(item)
-			SimcCopyFrameScrollText:HighlightText()
-			SimcCopyFrameScrollText:SetFocus()
-			SimcCopyFrameScrollText:HookScript("OnTextChanged", function(self) 
+			local text = SimcEditBox:GetText()
+			SimcEditBox:SetCursorPosition(SimcEditBox:GetNumLetters())
+			SimcEditBox:HighlightText(0,0)
+			SimcEditBox:Insert(item)
+			SimcEditBox:HighlightText()
+			SimcEditBox:SetFocus()
+			SimcEditBox:HookScript("OnTextChanged", function(self) 
 				if hooked then
 					self:SetText(text .. item)
 					self:HighlightText()
 				end
 			end)
 
-			SimcCopyFrameScrollText:HookScript("OnHide", function(self)
+			SimcEditBox:HookScript("OnHide", function(self)
 				hooked = false
 			end)
 		end
