@@ -1,5 +1,5 @@
 <Bindings>
-	<Binding name = "tooltipSimc" header = "TOOLTIPSIMC1">
+	<Binding name = "TooltipToSimc" header = "TOOLTIPSIMC1" Category="ADDONS">
 		tpSimcCurrentTooltip()
 	</Binding>
 </Bindings>
