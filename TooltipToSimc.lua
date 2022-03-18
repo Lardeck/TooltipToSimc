@@ -71,67 +71,15 @@ local function getItemInfo(itemSplit, slot, itemLink, itemLevel)
 	-- https://www.curseforge.com/wow/addons/simulationcraft
 	
 	local itemInfo = {}
-	local gems = {}
-	local gemBonuses = {}
 	local itemId = itemSplit[1]
 	itemInfo[#itemInfo + 1] = ',id=' .. itemId
-
-	--[[ Enchant
-	if itemSplit[2] > 0 then
-		itemInfo[#itemInfo + 1] = 'enchant_id=' .. itemSplit[2]
-	end
-
-	Gems
-	for gemOffset = 3, 6 do
-		local gemIndex = (gemOffset - 3) + 1
-		if itemSplit[gemOffset] > 0 then
-			local _, gemLink = GetItemGem(itemLink, gemIndex)
-			if gemLink ~= nil then
-				local itemId = string.match(gemLink, "item:(%d+)")
-				local gemId = itemId and tonumber(itemId) or 0
-				if gemId > 0 then
-					local gemSplit = getItemSplit(gemLink)
-					local bonuses = {}
-
-				    for index=1, gemSplit[13] do
-  						bonuses[#bonuses + 1] = gemSplit[13 + index]
-					end
-					gems[gemIndex] = gemId
-					gemBonuses[gemIndex] = #bonuses > 0 and table.concat(bonuses, ":") or 0
-				end
-			end
-		else
-			gems[gemIndex] = 0
-			gemBonuses[gemIndex] = 0
-		end
-	end
-
-	-- Remove any trailing zeros from the gems array
-	while #gems > 0 and gems[#gems] == 0 do
-		table.remove(gems, #gems)
-	end
-
-	-- Remove any trailing zeros from the gem bonuses
-	while #gemBonuses > 0 and gemBonuses[#gemBonuses] == 0 do
-		table.remove(gemBonuses, #gemBonuses)
-	end
-
-	if #gems > 0 then
-		itemInfo[#itemInfo + 1] = 'gem_id=' .. table.concat(gems, '/')
-		if #gemBonuses > 0 then
-			itemInfo[#itemInfo + 1] = 'gem_bonus_id=' .. table.concat(gemBonuses, '/')
-		end
-	end]]
 
 	-- New style item suffix, old suffix style not supported
 	if itemSplit[7] ~= 0 then
 		itemInfo[#itemInfo + 1] = 'suffix=' .. itemSplit[7]
 	end
 
-	local flags = itemSplit[11]
-
 	local bonuses = {}
-
 	for index=1, itemSplit[13] do
 		bonuses[#bonuses + 1] = itemSplit[13 + index]
 	end
@@ -144,48 +92,27 @@ local function getItemInfo(itemSplit, slot, itemLink, itemLevel)
 		itemInfo[#itemInfo + 1] = 'bonus_id=' .. table.concat(bonuses, '/')
 	end
 
-	local linkOffset = 13 + #bonuses + 1
-
-	-- Upgrade level
-	if bit.band(flags, 0x4) == 0x4 then
-		local upgradeId = itemSplit[linkOffset]
-		if upgradeTable and upgradeTable[upgradeId] ~= nil and upgradeTable[upgradeId] > 0 then
-			itemInfo[#itemInfo + 1] = 'upgrade=' .. upgradeTable[upgradeId]
-		end
-		linkOffset = linkOffset + 1
-	end
-
-	-- Some leveling quest items seem to use this, it'll include the drop level of the item
-	if bit.band(flags, 0x200) == 0x200 then
-		itemInfo[#itemInfo + 1] = 'drop_level=' .. itemSplit[linkOffset]
-		linkOffset = linkOffset + 1
-	end
-
 	-- Get item creation context. Can be used to determine unlock/availability of azerite tiers for 3rd parties
 	if itemSplit[12] ~= 0 then
 		itemInfo[#itemInfo + 1] = 'context=' .. itemSplit[12]
 	end
 
-	-- Azerite powers - only run in BfA client
-	if itemLoc and AzeriteEmpoweredItem then
-		if AzeriteEmpoweredItem.IsAzeriteEmpoweredItem(itemLoc) then
-			local azeritePowers = {}
-			local powerIndex = 1
-			local tierInfo = AzeriteEmpoweredItem.GetAllTierInfo(itemLoc)
-			for azeriteTier, tierInfo in pairs(tierInfo) do
-				for _, powerId in pairs(tierInfo.azeritePowerIDs) do
-					if AzeriteEmpoweredItem.IsPowerSelected(itemLoc, powerId) then
-						azeritePowers[powerIndex] = powerId
-						powerIndex = powerIndex + 1
-					end
-				end
-			end
-			itemInfo[#itemInfo + 1] = 'azerite_powers=' .. table.concat(azeritePowers, '/')
-		end
-
-		if AzeriteItem.IsAzeriteItem(itemLoc) then
-			itemInfo[#itemInfo + 1] = 'azerite_level=' .. AzeriteItem.GetPowerLevel(itemLoc)
-		end
+	local linkOffset = 13 + #bonuses + 1
+	local craftedStats = {}
+	local numPairs = itemSplit[linkOffset]
+	for index=1, numPairs do
+	  local pairOffset = 1 + linkOffset + (2 * (index - 1))
+	  local pairType = itemSplit[pairOffset]
+	  local pairValue = itemSplit[pairOffset + 1]
+	  if pairType == 9 then
+		itemInfo[#itemInfo + 1] = 'drop_level=' .. pairValue
+	  elseif pairType == 29 or pairType == 30 then
+		craftedStats[#craftedStats + 1] = pairValue
+	  end
+	end
+  
+	if #craftedStats > 0 then
+		itemInfo[#itemInfo + 1] = 'crafted_stats=' .. table.concat(craftedStats, '/')
 	end
 
 	if itemLevel then
@@ -260,7 +187,10 @@ end
 local function getTooltipItem(tooltip, button)
 	local locItemName, itemLink = tooltip:GetItem()
 	if not itemLink then return end
-	local itemLevel, _, _, _, _, equipLoc, _, _, _, subId  = select(4, GetItemInfo(itemLink))
+	local equipLoc, _, _, _, subId  = select(9, GetItemInfo(itemLink))
+	local item = Item:CreateFromItemLink(itemLink)
+	if item:IsItemEmpty() then return end
+	local itemLevel = item:GetCurrentItemLevel()
 
 	if equipLoc and equipLoc ~= '' then
 		local itemString = string.match(itemLink, "item:([%-?%d:]+)")
@@ -362,7 +292,6 @@ function tpSimcCurrentTooltip()
 	end
 end
 
--- Fuck Frames
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:SetScript("OnEvent", function(self, e, a)
